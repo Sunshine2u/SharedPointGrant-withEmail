@@ -159,7 +159,7 @@ function submitAction(actionType) {
         return;
     }
 
-    logConsole(`[Processing] Sending ${actionType} request for ${selectedIdList.length} items...`);
+    logConsole(`[Processing] เริ่มยิง ${actionType} จำนวน ${selectedIdList.length} รายการ...`);
 
     // 2. ส่ง selected_ids ไปยัง Python ให้ตรงชื่อ Key
     fetch("/api/execute", {
@@ -170,7 +170,42 @@ function submitAction(actionType) {
     .then(res => res.json())
     .then(res => {
         if (res.success) {
-            res.results.forEach(item => {
+            pollExecution(res.job_id, actionType);
+        } else {
+            logConsole("[Error] " + res.error, "error");
+            showResultPopup("เกิดข้อผิดพลาด", res.error);
+        }
+    })
+    .catch(err => {
+        logConsole("[Error] Request failed: " + err, "error");
+        showResultPopup("เกิดข้อผิดพลาด", err.message);
+    });
+}
+
+function pollExecution(jobId, actionType) {
+    const lastProgressKey = `grant-progress-${jobId}`;
+    fetch(`/api/execute/${jobId}`)
+    .then(res => res.json())
+    .then(res => {
+        if (!res.success) {
+            logConsole("[Error] " + res.error, "error");
+            return;
+        }
+        const progressKey = `${res.current}/${res.current_id}`;
+        if (res.current && sessionStorage.getItem(lastProgressKey) !== progressKey) {
+            logConsole(`[Processing] กำลังยิงลำดับที่ ${res.current}/${res.total} (รายการ ${res.current_id})...`);
+            sessionStorage.setItem(lastProgressKey, progressKey);
+        }
+        if (res.status === "running" || res.status === "queued") {
+            setTimeout(() => pollExecution(jobId, actionType), 700);
+            return;
+        }
+        if (res.status === "failed") {
+            logConsole("[Error] " + res.error, "error");
+            showResultPopup("เกิดข้อผิดพลาด", res.error);
+            return;
+        }
+        res.results.forEach(item => {
                 const logType = item.status === "Error" || item.email_status === "failed" ? "error" : "success";
                 logConsole(`[Item ${item.id}] ${item.status} | ${item.remark}`, logType);
             });
@@ -185,14 +220,6 @@ function submitAction(actionType) {
                 clearSelections();
                 loadData();
             });
-        } else {
-            logConsole("[Error] " + res.error, "error");
-            showResultPopup("เกิดข้อผิดพลาด", res.error);
-        }
-    })
-    .catch(err => {
-        logConsole("[Error] Request failed: " + err, "error");
-        showResultPopup("เกิดข้อผิดพลาด", err.message);
     });
 }
 

@@ -102,6 +102,14 @@ def check_graph_connection():
     except Exception as e:
         return False, f"เชื่อมต่อ Microsoft Graph ไม่ได้ ({type(e).__name__}): {e}"
 
+def response_error_detail(response):
+    try:
+        data = response.json()
+        error = data.get("error", {})
+        return error.get("message") or data.get("odata.error", {}).get("message", {}).get("value")
+    except (ValueError, AttributeError):
+        return None
+
 def process_sharepoint_permission(site_url, relative_folder_path, email, action_type, role_name, start_date="", end_date=""):
     graph_ready, graph_message = check_graph_connection()
     print(f"[Microsoft Graph] {graph_message}")
@@ -140,13 +148,19 @@ def process_sharepoint_permission(site_url, relative_folder_path, email, action_
 
     # Break Inheritance
     break_url = f"{folder_url}/breakroleinheritance(copyRoleAssignments=true, clearSubscopes=true)"
-    requests.post(break_url, cookies=cookies, headers=headers)
+    break_res = requests.post(break_url, cookies=cookies, headers=headers)
+    if break_res.status_code not in [200, 204]:
+        detail = response_error_detail(break_res)
+        suffix = f": {detail}" if detail else ""
+        return {"status": "Error", "remark": f"Break inheritance failed (Code: {break_res.status_code}){suffix}"}
 
     # Get Principal ID จาก Email
     ensure_url = f"{site_url}/_api/web/ensureuser"
     user_res = requests.post(ensure_url, cookies=cookies, headers=headers, json={"logonName": email})
     if user_res.status_code not in [200, 201]:
-        return {"status": "Error", "remark": f"User not found: {email}"}
+        detail = response_error_detail(user_res)
+        suffix = f": {detail}" if detail else ""
+        return {"status": "Error", "remark": f"User not found: {email} (Code: {user_res.status_code}){suffix}"}
     
     principal_id = user_res.json()['d']['Id']
 
@@ -164,7 +178,9 @@ def process_sharepoint_permission(site_url, relative_folder_path, email, action_
                 "email_status": email_result["status"],
                 "remark": f"Granted successfully; {email_result['remark']}"
             }
-        return {"status": "Error", "remark": f"GRANT Failed (Code: {res.status_code})"}
+        detail = response_error_detail(res)
+        suffix = f": {detail}" if detail else ""
+        return {"status": "Error", "remark": f"GRANT Failed (Code: {res.status_code}){suffix}"}
             
     elif action_type == "REVOKE":
         remove_url = f"{folder_url}/roleassignments/getbyprincipalid({principal_id})"

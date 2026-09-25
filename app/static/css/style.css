@@ -1,0 +1,87 @@
+.status-panel {
+	position: fixed;
+	z-index: 1030;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	margin: 0;
+	border-radius: 8px 8px 0 0 !important;
+}
+
+.status-panel-header {
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+#consoleLog {
+	height: 120px;
+	overflow-y: auto;
+}
+
+body {
+	padding-bottom: 165px !important;
+}
+
+.app-header-card {
+	position: sticky;
+	top: 0;
+	z-index: 1040;
+	margin-bottom: 0 !important;
+	min-height: 64px;
+	background: #fff !important;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	box-shadow: 0 0 0 100vmax #fff, 0 2px 4px rgba(0, 0, 0, 0.05);
+	clip-path: inset(0 -100vmax);
+}
+
+.permission-toolbar {
+	position: sticky;
+	top: 64px;
+	z-index: 1039;
+	height: 48px;
+	box-sizing: border-box;
+	background: #fff !important;
+	box-shadow: 0 0 0 100vmax #fff, 0 1px 0 rgba(0, 0, 0, 0.08);
+	clip-path: inset(0 -100vmax);
+}
+
+.permission-filters {
+	position: sticky;
+	top: 112px;
+	z-index: 1039;
+	height: 48px;
+	box-sizing: border-box;
+	background: #fff !important;
+	box-shadow: 0 0 0 100vmax #fff, 0 1px 0 rgba(0, 0, 0, 0.08);
+	clip-path: inset(0 -100vmax);
+}
+
+.permission-table-head {
+	position: sticky;
+	top: 160px;
+	z-index: 1038;
+	background: #fff !important;
+	box-shadow: 0 0 0 100vmax #fff, 0 1px 0 rgba(0, 0, 0, 0.12);
+	clip-path: inset(0 -100vmax);
+}
+
+.permission-table-head th {
+	background: #fff !important;
+}
+
+.status-toggle {
+	position: fixed;
+	right: 1rem;
+	bottom: 1rem;
+	z-index: 1031;
+	display: none;
+}
+
+.status-panel.is-hidden {
+	display: none;
+}
+
+@media (max-width: 768px) {
+	#consoleLog { height: 125px; }
+	body { padding-bottom: 165px !important; }
+}

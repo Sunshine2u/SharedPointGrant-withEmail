@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Budget Planning Permission Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: sans-serif; }
+        .card { border-radius: 8px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="py-4">
+<div class="container">
+    <div class="card mb-3 app-header-card">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold text-primary mb-1"><i class="fa-solid fa-folder-tree me-2"></i>Budget Planning Permission Manager</h5>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="loadData()"><i class="fa-solid fa-rotate me-1"></i>ดึงข้อมูลจาก Excel</button>
+        </div>
+    </div>
+
+    <div class="card mb-3 permission-card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 permission-toolbar">
+            <span>เลือกแล้ว: <strong id="selectedCount" class="text-primary">0</strong> รายการ</span>
+            <div>
+                <button class="btn btn-success btn-sm me-1" onclick="submitAction('GRANT')"><i class="fa-solid fa-user-plus me-1"></i>ให้สิทธิ์ (Grant)</button>
+                <button class="btn btn-danger btn-sm" onclick="submitAction('REVOKE')"><i class="fa-solid fa-user-minus me-1"></i>ยกเลิกสิทธิ์ (Revoke)</button>
+            </div>
+        </div>
+        <div class="card-body border-bottom py-2 permission-filters">
+            <div class="row g-2">
+                <div class="col-md-4"><input type="search" id="pathFilter" class="form-control form-control-sm" placeholder="กรอง Path ย่อย" oninput="applyFilters()"></div>
+                <div class="col-md-3"><input type="search" id="emailFilter" class="form-control form-control-sm" placeholder="กรอง Email" oninput="applyFilters()"></div>
+                <div class="col-md-3">
+                    <select id="statusFilter" class="form-select form-select-sm" onchange="applyFilters()">
+                        <option value="">สถานะล่าสุด: ทั้งหมด</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="selectionFilter" class="form-select form-select-sm" onchange="applyFilters()">
+                        <option value="all">รายการ: ทั้งหมด</option>
+                        <option value="selected">เลือกอยู่</option>
+                        <option value="unselected">ไม่ได้เลือก</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light permission-table-head">
+                    <tr>
+                        <th class="text-center"><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
+                        <th>ลำดับ</th>
+                        <th>Path ย่อย</th>
+                        <th>Email</th>
+                        <th class="text-center">ระดับสิทธิ์</th>
+                        <th class="text-center">วันเริ่มต้น</th>
+                        <th class="text-center">วันสิ้นสุด</th>
+                        <th class="text-center">สถานะล่าสุด</th>
+                        <th class="text-center">Logs Date</th>
+                        <th class="text-center">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="status-panel card bg-dark text-light">
+        <div class="status-panel-header d-flex justify-content-between align-items-center px-3 py-2">
+            <span><i class="fa-solid fa-terminal me-2"></i>สถานะการทำงาน</span>
+            <div>
+                <button class="btn btn-sm btn-outline-light me-1" onclick="clearConsole()">ล้างรายการ</button>
+                <button class="btn btn-sm btn-outline-light" onclick="hideStatusPanel()" title="ปิด"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="card-body font-monospace p-2 small" id="consoleLog">
+            <div>[System] Ready. Click "ดึงข้อมูลจาก Excel" to start.</div>
+        </div>
+    </div>
+</div>
+
+<button id="showStatusButton" class="btn btn-dark status-toggle" onclick="showStatusPanel()" title="แสดงสถานะ">
+    <i class="fa-solid fa-terminal me-1"></i>สถานะ
+</button>
+
+<div class="modal fade" id="permissionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="permissionModalTitle">แก้ไขรายการ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId">
+                <label class="form-label">Path ย่อย</label>
+                <input class="form-control mb-2" id="editPath">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control mb-2" id="editEmail">
+                <label class="form-label">ระดับสิทธิ์</label>
+                <select class="form-select mb-2" id="editRole"><option>Edit</option><option>Read Only</option></select>
+                <div class="row g-2">
+                    <div class="col-6"><label class="form-label">วันเริ่มต้น</label><input type="date" class="form-control" id="editStartDate"></div>
+                    <div class="col-6"><label class="form-label">วันสิ้นสุด</label><input type="date" class="form-control" id="editEndDate"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="savePermission()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultModalTitle">สถานะการทำงาน</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+            </div>
+            <div class="modal-body" id="resultModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="resultModalOk">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

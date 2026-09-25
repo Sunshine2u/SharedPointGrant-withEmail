@@ -1,0 +1,11 @@
+# Environment & Secret files
+.env
+.env.*
+!.env.example
+*.env
+config.env
+
+
+# Python cache files
+__pycache__/
+*.py[cod]

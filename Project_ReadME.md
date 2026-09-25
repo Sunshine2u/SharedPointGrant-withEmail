@@ -225,6 +225,17 @@ sequenceDiagram
 
 ## 7. 🛠 Operational & Troubleshooting Guide
 
+### 7.1 การติดตั้งและเริ่มใช้งานบนเครื่องใหม่
+
+ให้ดับเบิลคลิกไฟล์ `++Start_App.bat` จากโฟลเดอร์หลักของโปรเจกต์ได้เลย สคริปต์จะ:
+
+1. ตรวจหา Python ที่ติดตั้งอยู่แล้วผ่าน `python`, `py -3` และโฟลเดอร์ติดตั้งมาตรฐาน
+2. หากไม่พบ Python จะติดตั้ง Python 3.12 อัตโนมัติผ่าน `winget`
+3. ตรวจสอบและเปิดใช้งาน `pip` หากจำเป็น
+4. ติดตั้งแพ็กเกจจาก `config\requirements.txt` แล้วจึงเปิดเว็บแอป
+
+การติดตั้งอัตโนมัติต้องใช้ Windows ที่มี `winget` (App Installer) และสิทธิ์ติดตั้งโปรแกรม หากเครื่องไม่มี `winget` ให้ติดตั้ง Python จาก [python.org](https://www.python.org/downloads/) แล้วรันไฟล์เดิมอีกครั้ง
+
 | Issue / Symptom | Cause | Solution |
 | :--- | :--- | :--- |
 | **HTTP 401 / Auth Failed** | Cookie `rtFa` หรือ `FedAuth` หมดอายุ | เปิด SharePoint บน Browser กด F12 คัดลอกค่า Cookie ใหม่ไปอัปเดตใน `.env` ที่ `SP_RTFA` และ `SP_FEDAUTH` |
